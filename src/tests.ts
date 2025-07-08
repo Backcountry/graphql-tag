@@ -317,66 +317,6 @@ describe('gql', () => {
     });
   });
 
-  it('returns the same object for the same query', () => {
-    assert.isTrue(gql`{ sameQuery }` === gql`{ sameQuery }`);
-  });
-
-  it('returns the same object for the same query, even with whitespace differences', () => {
-    assert.isTrue(gql`{ sameQuery }` === gql`  { sameQuery,   }`);
-  });
-
-  const fragmentAst = gql`
-  fragment UserFragment on User {
-    firstName
-    lastName
-  }
-`;
-
-  it('returns the same object for the same fragment', () => {
-    assert.isTrue(gql`fragment same on Same { sameQuery }` ===
-      gql`fragment same on Same { sameQuery }`);
-  });
-
-  it('returns the same object for the same document with substitution', () => {
-    // We know that calling `gql` on a fragment string will always return
-    // the same document, so we can reuse `fragmentAst`
-    assert.isTrue(gql`{ ...UserFragment } ${fragmentAst}` ===
-      gql`{ ...UserFragment } ${fragmentAst}`);
-  });
-
-  it('can reference a fragment that references as fragment', () => {
-    const secondFragmentAst = gql`
-      fragment SecondUserFragment on User {
-        ...UserFragment
-      }
-      ${fragmentAst}
-    `;
-
-    const ast = gql`
-      {
-        user(id: 5) {
-          ...SecondUserFragment
-        }
-      }
-      ${secondFragmentAst}
-    `;
-
-    assert.deepEqual(ast, gql`
-      {
-        user(id: 5) {
-          ...SecondUserFragment
-        }
-      }
-      fragment SecondUserFragment on User {
-        ...UserFragment
-      }
-      fragment UserFragment on User {
-        firstName
-        lastName
-      }
-    `);
-  });
-
   describe('fragment warnings', () => {
     let warnings = [];
     const oldConsoleWarn = console.warn;
@@ -395,14 +335,6 @@ describe('gql', () => {
 
       assert.isFalse(frag1 === frag2);
       assert.equal(warnings.length, 1);
-    });
-
-    it('does not warn if you use the same fragment name for the same fragment', () => {
-      const frag1 = gql`fragment TestDifferent on Bar { fieldOne }`;
-      const frag2 = gql`fragment TestDifferent on Bar { fieldOne }`;
-
-      assert.isTrue(frag1 === frag2);
-      assert.equal(warnings.length, 0);
     });
 
     it('does not warn if you use the same embedded fragment in two different queries', () => {

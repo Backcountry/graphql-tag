@@ -6,9 +6,6 @@ import {
   Location,
 } from 'graphql/language/ast';
 
-// A map docString -> graphql document
-const docCache = new Map<string, DocumentNode>();
-
 // A map fragmentName -> [normalized source]
 const fragmentSourceMap = new Map<string, Set<string>>();
 
@@ -91,23 +88,10 @@ function stripLoc(doc: DocumentNode) {
 }
 
 function parseDocument(source: string) {
-  var cacheKey = normalize(source);
-  if (!docCache.has(cacheKey)) {
-    const parsed = parse(source, {
-      experimentalFragmentVariables,
-      allowLegacyFragmentVariables: experimentalFragmentVariables,
-    } as any);
-    if (!parsed || parsed.kind !== 'Document') {
-      throw new Error('Not a valid GraphQL document.');
-    }
-    docCache.set(
-      cacheKey,
-      // check that all "new" fragments inside the documents are consistent with
-      // existing fragments of the same name
-      stripLoc(processFragments(parsed)),
-    );
-  }
-  return docCache.get(cacheKey)!;
+  return stripLoc(processFragments(parse(source, {
+    experimentalFragmentVariables,
+    allowLegacyFragmentVariables: experimentalFragmentVariables,
+  } as any)));
 }
 
 // XXX This should eventually disallow arbitrary string interpolation, like Relay does
@@ -135,7 +119,6 @@ export function gql(
 }
 
 export function resetCaches() {
-  docCache.clear();
   fragmentSourceMap.clear();
 }
 
